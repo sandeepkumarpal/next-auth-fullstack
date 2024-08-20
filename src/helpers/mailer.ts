@@ -1,4 +1,7 @@
+import { EMAIL_TYPE } from "@/constants";
 import nodemailer from "nodemailer";
+import bcryptjs from "bcryptjs";
+import User from "@/models/userModel";
 
 export const sendEmail = async ({
   email,
@@ -10,25 +13,38 @@ export const sendEmail = async ({
   userId: string;
 }) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false, // Use `true` for port 465, `false` for all other ports
+    const hashedToken = await bcryptjs.hash(userId.toString(), 10);
+
+    if (emailType === EMAIL_TYPE.VERIFY) {
+      await User.findByIdAndUpdate(userId, {
+        verifyToken: hashedToken,
+        verifyTokenExpiry: Date.now() + 3600000,
+      });
+    } else if (emailType === EMAIL_TYPE.RESET) {
+      await User.findByIdAndUpdate(userId, {
+        forgotPasswordToken: hashedToken,
+        forgotPasswordTokenExpiry: Date.now() + 3600000,
+      });
+    }
+    var transport = nodemailer.createTransport({
+      host: process.env.SMTP_EMAIL,
+      port: 2525,
       auth: {
-        user: "maddison53@ethereal.email",
-        pass: "jn7jnAPss4f63QBp6D",
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
       },
     });
 
     const mailOptions = {
-      from: '"Maddison Foo Koch 👻" <maddison53@ethereal.email>', // sender address
-      to: "bar@example.com, baz@example.com", // list of receivers
-      subject: "Hello ✔", // Subject line
+      from: "sandeep@yopmail.com", // sender address
+      to: email, // list of receivers
+      subject:
+        emailType == EMAIL_TYPE.VERIFY ? "Verify Email" : "Forgot Password ✔",
       text: "Hello world?", // plain text body
       html: "<b>Hello world?</b>", // html body
     };
 
-    const mailResponse = await transporter.sendMail(mailOptions);
+    const mailResponse = await transport.sendMail(mailOptions);
     return mailResponse;
   } catch (error: any) {
     throw new Error(error.message);
