@@ -2,9 +2,10 @@ import mongoose, { Document, Schema } from "mongoose";
 
 // Define an interface for the User document
 interface IUser extends Document {
-  userName: string;
+  username: string;
   email: string;
   password: string;
+  isVerfied: boolean;
   isAdmin: boolean;
   forgotPasswordToken: string;
   forgotPasswordTokenExpiry: Date;
@@ -14,7 +15,7 @@ interface IUser extends Document {
 
 // Define the user schema using the interface
 const userSchema: Schema<IUser> = new mongoose.Schema({
-  userName: {
+  username: {
     type: String,
     required: [true, "username is required"],
     unique: true,
@@ -28,9 +29,13 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     type: String,
     required: [true, "password is required"],
   },
+  isVerfied: {
+    type: Boolean,
+    default: false,
+  },
   isAdmin: {
     type: Boolean,
-    required: true,
+    default: false,
   },
   forgotPasswordToken: String,
   forgotPasswordTokenExpiry: Date,

@@ -13,7 +13,9 @@ export async function POST(request: NextRequest) {
     const reqBody = await request.json();
     const { username, email, password } = reqBody;
     // validation
-    const user = await User.findOne({ $or: [{ email, username }] });
+    const user = await User.findOne({
+      $or: [{ email: email }, { username: username }],
+    });
     if (user) {
       return NextResponse.json(
         { error: "User already exist" },
@@ -22,14 +24,14 @@ export async function POST(request: NextRequest) {
     }
     const salt = await bcryptjs.genSalt(10);
     const hashedPw = await bcryptjs.hash(password, salt);
-
-    const newUser = new User({
+    const newUser = await new User({
       username,
       email,
       password: hashedPw,
     });
+
     const savedUser = await newUser.save();
-    console.log("savedUser", savedUser);
+
     // send verification Email
     await sendEmail({
       email,
